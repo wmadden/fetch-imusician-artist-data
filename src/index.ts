@@ -1,6 +1,6 @@
 import { SpotifyClient, ArtistObject, SimplifiedAlbumObject } from "./spotify";
 import * as yargs from "yargs";
-import { readFile, writeFile, write } from "fs";
+import { readFile, writeFile } from "fs";
 import { uniq, chunk, flatten } from "lodash";
 
 type RemoteIds = { spotify?: { id: string | null } };
@@ -48,6 +48,13 @@ async function parseInputFile(file: string): Promise<ArtistData[]> {
   });
 }
 
+function escapeCsvCharacters(value: string | undefined | number): string {
+  if (typeof value === "number") return value.toString();
+  if (!value) return "";
+
+  return `"${value.replace(/(["\n])/g, "\\$1")}"`;
+}
+
 function writeOutput(
   artists: ArtistObject[],
   artistIdToLatestAlbumDict: {
@@ -68,7 +75,9 @@ function writeOutput(
           followers,
           artistIdToLatestAlbumDict[id]?.name,
           artistIdToLatestAlbumDict[id]?.release_date,
-        ].join(",")
+        ]
+          .map(escapeCsvCharacters)
+          .join(",")
       )
       .join("\n");
 
