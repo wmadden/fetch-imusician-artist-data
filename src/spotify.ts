@@ -33,8 +33,40 @@ export type ArtistObject = {
   images: ImageObject[];
   name: string;
   popularity: number;
-  type: string;
+  type: "artist";
   uri: string;
+};
+
+export type SimplifiedArtistObject = Pick<
+  ArtistObject,
+  "id" | "external_urls" | "uri" | "name" | "type" | "href"
+>;
+
+export type SimplifiedAlbumObject = {
+  album_group: string;
+  album_type: string;
+  artists: ArtistObject[];
+  available_markets: string[];
+  external_urls: ExternalUrlObject[];
+  href: string;
+  id: string;
+  images: ImageObject[];
+  name: string;
+  release_date: string;
+  release_date_precision: string;
+  total_tracks: number;
+  type: "album";
+  uri: string;
+};
+
+type PagingObject<Resource> = {
+  items: Resource[];
+  limit: number;
+  next: string | null;
+  offset: number;
+  previous: string | null;
+  total: number;
+  href: string;
 };
 
 async function getAuthToken(
@@ -60,6 +92,40 @@ async function getAuthToken(
   return response.data;
 }
 
+const TOO_MANY_REQUESTS = 429;
+const MAX_RETRIES = 10;
+
+async function retryAfterRateLimitApplied<T>(
+  innerFn: () => Promise<T>,
+  previousRetries: number = 0
+): Promise<T> {
+  try {
+    return await innerFn();
+  } catch (error) {
+    if (
+      error.response?.status !== TOO_MANY_REQUESTS ||
+      previousRetries >= MAX_RETRIES
+    ) {
+      throw error;
+    }
+
+    const secondsToWait: number = parseInt(
+      error.response.headers["retry-after"],
+      10
+    );
+
+    console.log(
+      `Rate limit reached, waiting ${secondsToWait} seconds before continuing (retry ${
+        previousRetries + 1
+      })...`
+    );
+
+    await new Promise((resolve) => setTimeout(resolve, secondsToWait * 1000));
+
+    return await retryAfterRateLimitApplied(innerFn, previousRetries + 1);
+  }
+}
+
 export class SpotifyClient {
   private accessToken?: SpotifyAccessTokenResponse;
   private client?: AxiosInstance;
@@ -75,11 +141,27 @@ export class SpotifyClient {
   }
 
   async getArtists(ids: string[]): Promise<ArtistObject[]> {
-    return (
-      await this.assertClient().get<{ artists: ArtistObject[] }>("artists", {
+    const response = await retryAfterRateLimitApplied(() =>
+      this.assertClient().get<{ artists: ArtistObject[] }>("artists", {
         params: { ids: ids.join(",") },
       })
-    ).data.artists;
+    );
+
+    return response.data.artists;
+  }
+
+  async getLatestAlbum(
+    artistId: string
+  ): Promise<SimplifiedAlbumObject | undefined> {
+    const response = await retryAfterRateLimitApplied(() =>
+      this.assertClient().get<PagingObject<SimplifiedAlbumObject>>(
+        `artists/${artistId}/albums`,
+        {
+          params: { limit: 1 },
+        }
+      )
+    );
+    return response.data.items[0];
   }
 
   private assertClient(): AxiosInstance {

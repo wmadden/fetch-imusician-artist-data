@@ -19,6 +19,10 @@
     "typescript": "^3.9.7"
   },
   "dependencies": {
-    "axios": "^0.19.2"
+    "@types/lodash": "^4.14.159",
+    "@types/yargs": "^15.0.5",
+    "axios": "^0.19.2",
+    "lodash": "^4.17.20",
+    "yargs": "^15.4.1"
   }
 }

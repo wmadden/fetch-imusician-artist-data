@@ -17,8 +17,6 @@ You must have NodeJS 14+ installed.
 
 ## Usage
 
-Run the following on the command line, replacing the elements in CAPS:
-
 ```
-node out/index.js CLIENT_ID CLIENT_SECRET ARTIST_ID_1 ARTIST_ID_2 ...
+node out/index.js --help
 ```
