@@ -19,9 +19,13 @@
     "typescript": "^3.9.7"
   },
   "dependencies": {
+    "@types/csv-parse": "^1.2.2",
+    "@types/csv-stringify": "^3.1.0",
     "@types/lodash": "^4.14.159",
     "@types/yargs": "^15.0.5",
     "axios": "^0.19.2",
+    "csv-parse": "^4.12.0",
+    "csv-stringify": "^5.5.1",
     "lodash": "^4.17.20",
     "yargs": "^15.4.1"
   }
