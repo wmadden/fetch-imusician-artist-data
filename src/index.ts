@@ -63,22 +63,17 @@ async function parseInputCsv(file: string): Promise<InputRecord[]> {
 }
 
 async function parseInputJson(file: string): Promise<InputRecord[]> {
-  return new Promise((resolve, reject) => {
-    readFile(file, "utf8", (err, data) => {
-      if (err) reject(err);
-      const parsedJson: { shop_artist_ids: string }[] = JSON.parse(data);
+  const fileContent = await promisify(readFile)(file, "utf8");
 
-      const inputRecords = parsedJson.map((value) => {
-        return {
-          originalInput: value,
-          shop_artist_ids: value.shop_artist_ids
-            ? JSON.parse(value.shop_artist_ids)
-            : null,
-        };
-      });
+  const parsedJson: { shop_artist_ids: string }[] = JSON.parse(fileContent);
 
-      resolve(inputRecords);
-    });
+  return parsedJson.map((value) => {
+    return {
+      originalInput: value,
+      shop_artist_ids: value.shop_artist_ids
+        ? JSON.parse(value.shop_artist_ids)
+        : null,
+    };
   });
 }
 
